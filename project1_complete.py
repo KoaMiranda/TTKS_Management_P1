@@ -73,7 +73,7 @@ def eamonn_nn(originalPoints, euclideanPoints): # will be using original coordin
       #removalNode = distanceFromCurrent[0][0]
       #unvisitedNodes.remove(removalNode) seems to be working
 
-def route_distance(routeTaken, euclideanPoints, localMin): # will be calculating how much distance route took
+def route_distance(routeTaken, euclideanPoints, localMin=None): # will be calculating how much distance route took
    
    totalDistance = 0.0
    
@@ -81,8 +81,9 @@ def route_distance(routeTaken, euclideanPoints, localMin): # will be calculating
       totalDistance += euclideanPoints[routeTaken[i]][routeTaken[i+1]] # node we are on as well as node we will go to
                                                                        # dont think this includes last node back to start, do it below
                                                                        # ^Fixed. appended the start node to the routeTaken so it creates a loop
-      if totalDistance > localMin: 
-         break
+      if localMin != None: 
+         if totalDistance > localMin: 
+            break
    totalDistance += euclideanPoints[routeTaken[-1]][routeTaken[0]]
    return totalDistance
 
@@ -112,7 +113,7 @@ def route_visualization(arr, NNAnswer, fileName, distance): #added
    plt.figure(figsize=(width,height), dpi = 100)
    plt.scatter(x, y, color = 'b', s = 40, marker = 'o') # creating a dot for each point
    plt.plot(x, y, '-', color = 'b', linewidth = 2) # drawing the lines connecting the points 
-   plt.scatter(x[0], y[0], color = 'r', s = 40, marker = 'o') # creating a dot for the first point / landing pad in a different color
+   plt.scatter(x[0], y[0], color = 'r', s = 140, marker = 'o') # creating a dot for the first point / landing pad in a different color
 
    plt.xlim(xMin, xMax)
    plt.ylim(yMin, yMax)
@@ -125,8 +126,28 @@ def route_visualization(arr, NNAnswer, fileName, distance): #added
 
    plt.savefig(f'{fileName}_SOLUTION_{distance}.jpg', format='jpg')
 #    plt.show()
-
 # route_visualization(arr, NNAnswer)
+
+def random_number_seq(N):
+    # N refers to the number of locations
+    # preserve sequence begins with location 1 and ends with location 1 
+    # N+1 elements
+    if N < 1: 
+        raise Exception("Length must be 1 or greater.")
+    
+    route = [i for i in range(2, N)]
+    rand.shuffle(route)
+    route.append(1)
+    route.insert(0, 1)
+    # print(route)
+    
+    return route
+    
+# Debug: 
+# locations = file_grabber(input("File name: "))
+# matrix_locations = eucl_dist(locations)
+# random_gen_route = random_number_seq(len(matrix_locations))
+# print(f"Total distance traveled: {route_distance(random_gen_route, matrix_locations)}")
 
 def main(): 
     print("ComputeDronePath Program:\n")
@@ -142,6 +163,9 @@ def main():
         if nodes > 256: 
            print("File exceeds maximum number of locations.")
            quit()
+        elif nodes < 1:
+           print("File contains no nodes.")
+           quit()
         
         euclideanAnswer = eucl_dist(arr)
         print(f"There are {nodes} nodes, computing route... (Type Control+C to stop program)") #beginning of the anytime algorithm:
@@ -150,10 +174,9 @@ def main():
         routeBSF = list()
 
         try:
-            while True: #im too stupid, im just going to use control+c...
+            while True: #idk how to do enter keyboard interrupt
                 NNAnswer = eamonn_nn(arr, euclideanAnswer) #route 
                 calcDist = math.ceil(route_distance(NNAnswer, euclideanAnswer, localMin)) #total distance of route
-               #when finding localMinimum, need to do early-abandonment to see if the path is necessary to traverse
                 if calcDist < localMin: 
                     print(f"\t\t{calcDist}") #new BSF 
                     localMin = calcDist
